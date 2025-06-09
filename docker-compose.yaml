@@ -1,0 +1,249 @@
+version: '3.8'
+
+services:
+  # Database Services
+  mongodb:
+    image: mongo:7
+    container_name: autocontentor_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: autocontentor
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - autocontentor_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: autocontentor_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - autocontentor_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Core Services
+  orchestrator:
+    build:
+      context: .
+      dockerfile: docker/orchestrator/Dockerfile
+    container_name: autocontentor_orchestrator
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://admin:password@mongodb:27017
+      - MONGODB_DATABASE=autocontentor
+      - REDIS_URL=redis://redis:6379
+      - APP_ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - autocontentor_network
+    volumes:
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Agent Services
+  keyword-agent:
+    build:
+      context: .
+      dockerfile: docker/agents/keyword/Dockerfile
+    container_name: autocontentor_keyword_agent
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://admin:password@mongodb:27017
+      - MONGODB_DATABASE=autocontentor
+      - REDIS_URL=redis://redis:6379
+      - APP_ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - KEYWORD_AGENT_PORT=8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - autocontentor_network
+    volumes:
+      - ./logs:/app/logs
+
+  audience-agent:
+    build:
+      context: .
+      dockerfile: docker/agents/audience/Dockerfile
+    container_name: autocontentor_audience_agent
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://admin:password@mongodb:27017
+      - MONGODB_DATABASE=autocontentor
+      - REDIS_URL=redis://redis:6379
+      - APP_ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - AUDIENCE_AGENT_PORT=8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - autocontentor_network
+    volumes:
+      - ./logs:/app/logs
+
+  competitor-agent:
+    build:
+      context: .
+      dockerfile: docker/agents/competitor/Dockerfile
+    container_name: autocontentor_competitor_agent
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://admin:password@mongodb:27017
+      - MONGODB_DATABASE=autocontentor
+      - REDIS_URL=redis://redis:6379
+      - APP_ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - COMPETITOR_AGENT_PORT=8003
+    ports:
+      - "8003:8003"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - autocontentor_network
+    volumes:
+      - ./logs:/app/logs
+
+  trend-agent:
+    build:
+      context: .
+      dockerfile: docker/agents/trend/Dockerfile
+    container_name: autocontentor_trend_agent
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://admin:password@mongodb:27017
+      - MONGODB_DATABASE=autocontentor
+      - REDIS_URL=redis://redis:6379
+      - APP_ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - TREND_AGENT_PORT=8004
+    ports:
+      - "8004:8004"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - autocontentor_network
+    volumes:
+      - ./logs:/app/logs
+
+  aggregator-agent:
+    build:
+      context: .
+      dockerfile: docker/agents/aggregator/Dockerfile
+    container_name: autocontentor_aggregator_agent
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://admin:password@mongodb:27017
+      - MONGODB_DATABASE=autocontentor
+      - REDIS_URL=redis://redis:6379
+      - APP_ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - AGGREGATOR_AGENT_PORT=8005
+    ports:
+      - "8005:8005"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - autocontentor_network
+    volumes:
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+
+  # Development Tools
+  mongo-express:
+    image: mongo-express:latest
+    container_name: autocontentor_mongo_express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    networks:
+      - autocontentor_network
+    profiles:
+      - dev
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: autocontentor_redis_commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8082:8081"
+    depends_on:
+      - redis
+    networks:
+      - autocontentor_network
+    profiles:
+      - dev
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  autocontentor_network:
+    driver: bridge
