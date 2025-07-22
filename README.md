@@ -1,162 +1,128 @@
-# AutoContentor
+# AutoContentor: AI-Powered Content Research Automation
 
-AutoContentor is a multi-agent content research automation platform built on Google's Agent Development Kit (ADK). It orchestrates specialized agents to gather keyword data, audience personas, competitor SWOT analysis, and content trends, then aggregates results into structured reports.
+**AutoContentor** is a sophisticated, multi-agent platform designed to automate the entire content research process. By leveraging Google's Agent Development Kit (ADK), it coordinates a team of specialized AI agents to perform in-depth analysis on keywords, audience demographics, competitor strategies, and market trends. The result is a comprehensive, structured report that provides actionable insights for content creators, marketers, and strategists.
 
----
+## ✨ Features
 
-## Features
+- **Multi-Agent System**: A team of specialized agents for keywords, audience, competitors, and trends.
+- **Automated Research**: Automates the entire content research workflow, from data gathering to report generation.
+- **Comprehensive Reports**: Generates detailed reports including audience personas, SWOT analyses, and keyword metrics.
+- **Scalable Architecture**: Built on a lightweight, file-based system that is easy to deploy and scale.
+- **Developer-Friendly**: Run all services locally with a single command using the ADK Web UI for real-time monitoring.
+- **Docker Support**: Optional Docker Compose setup available for containerized deployments.
 
-- **Orchestrator**: Receives campaign metadata (campaignId, seedKeywords, competitorList, region), starts sessions, and dispatches tasks to agents.
-- **Keyword Agent**: Fetches keyword metrics (volume, difficulty, CPC, trends, related terms) via SEMrush, Ahrefs, DataForSEO.
-- **Audience Agent**: Builds customer personas (demographics, interests, pain points, sentiment) via Brandwatch, Twitter, Facebook.
-- **Competitor Agent (SWOT)**: Conducts SWOT analysis (strengths, weaknesses, opportunities, threats) using Ahrefs, BuzzSumo, SimilarWeb.
-- **Trend Agent**: Tracks content trends from Google Trends, Twitter, Reddit, Feedly.
-- **Aggregator Agent**: Waits for all agent results, combines data into a `ReportEntity`, and generates final reports.
-- **Shared Libraries**: Centralized API clients, Pydantic models, and utility helpers.
-- **Dev-UI**: FastAPI + ADK Web UI for real-time logs, events, and workflow visualization.
-- **Front-End**: React/Next.js interface for starting campaigns and viewing reports.
-- **Local Dev**: Docker Compose setup to run all services locally.
+## 🏛️ Architecture
 
----
+AutoContentor is built on a microservices-style architecture, with each agent operating as a separate service. The **Orchestrator** acts as the central hub, managing research campaigns and delegating tasks to the specialized agents. The system is designed to be stateless and uses a file-based approach for data persistence, making it highly portable and easy to manage.
 
-## Repository Structure
+## 🚀 Getting Started
 
-```text
+Follow these steps to get AutoContentor up and running on your local machine for development.
+
+### Prerequisites
+
+- [Python 3.11+](https://www.python.org/)
+- [Pip](https://pip.pypa.io/en/stable/installation/)
+
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/AutoContentor.git
+    cd AutoContentor
+    ```
+
+2.  **Set up a virtual environment:**
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    ```
+
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Configure your environment:**
+    -   Copy the example environment file:
+        ```bash
+        cp .env.example .env
+        ```
+    -   Open the `.env` file and add your API keys and any other necessary configurations.
+
+5.  **Run the ADK Web UI:**
+    ```bash
+    adk web
+    ```
+    This will start all the backend services and the developer UI.
+
+## ⚙️ Configuration
+
+The following environment variables need to be set in your `.env` file:
+
+| Variable                      | Description                                      |
+| ----------------------------- | ------------------------------------------------ |
+| `GOOGLE_API_KEY`              | Your Google API key for Trends, Search, etc.     |
+| `GOOGLE_SEARCH_ENGINE_ID`     | Your Google Custom Search Engine ID.             |
+| `OPENAI_API_KEY`              | Your OpenAI API key.                             |
+| `GEMINI_API_KEY`              | Your Gemini API key.                             |
+| `SERPAPI_KEY`                 | Your SerpAPI key for search results.             |
+| `SECRET_KEY`                  | A secret key for securing the application.       |
+
+## Usage
+
+Once the services are running via `adk web`, you can interact with the system through the ADK Web UI or by sending API requests directly.
+
+### Using the ADK Web UI
+
+1.  Open your browser and navigate to the ADK Web UI (typically `http://127.0.0.1:8000`).
+2.  Use the interface to start a new campaign and monitor the real-time logs and events from the agents.
+
+### Using the API
+
+You can start a new research campaign by sending a POST request to the Orchestrator's API.
+
+-   **Endpoint:** `http://127.0.0.1:8000/api/start-campaign`
+-   **Method:** `POST`
+-   **Body:**
+    ```json
+    {
+      "campaignId": "your-campaign-id",
+      "seedKeywords": ["keyword1", "keyword2"],
+      "competitorList": ["competitor1.com", "competitor2.com"],
+      "region": "US"
+    }
+    ```
+The Orchestrator will then start the research process.
+
+## 📁 Project Structure
+
+```
 AutoContentor/
-├── pyproject.toml              # Root project config
-├── docker-compose.yaml         # Local development
-├── .env.example                # Environment template
-├── requirements.txt            # Root dependencies
+├── .env.example                # Environment variables template
+├── docker-compose.yaml         # Docker Compose configuration
+├── pyproject.toml              # Project dependencies and metadata
 ├── src/
 │   └── auto_contentor/
-│       ├── __init__.py
-│       ├── shared/             # Consolidated shared components
-│       │   ├── __init__.py
-│       │   ├── models/         # All Pydantic models here
-│       │   │   ├── __init__.py
-│       │   │   ├── campaign.py
-│       │   │   ├── keyword.py
-│       │   │   ├── audience.py
-│       │   │   ├── competitor.py
-│       │   │   ├── trend.py
-│       │   │   └── report.py
-│       │   ├── clients/        # API clients
-│       │   │   ├── __init__.py
-│       │   │   └── api_clients.py
-│       │   ├── utils/          # Utilities
-│       │   │   ├── __init__.py
-│       │   │   ├── logger.py
-│       │   │   ├── validators.py
-│       │   │   └── helpers.py
-│       │   └── config/         # Configuration management
-│       │       ├── __init__.py
-│       │       ├── settings.py
-│       │       └── constants.py
 │       ├── orchestrator/       # Orchestrator service
-│       │   ├── __init__.py
-│       │   ├── main.py         # FastAPI app
-│       │   ├── agent.py        # Orchestrator agent
-│       │   ├── services/
-│       │   │   ├── __init__.py
-│       │   │   ├── job_dispatcher.py
-│       │   │   └── health_check.py
-│       │   └── api/
-│       │       ├── __init__.py
-│       │       ├── routes.py
-│       │       └── schemas.py
-│       └── agents/
-│           ├── __init__.py
-│           ├── base/           # Base agent classes
-│           │   ├── __init__.py
-│           │   └── base_agent.py
-│           ├── keyword/
-│           │   ├── __init__.py
-│           │   ├── main.py
-│           │   ├── agent.py
-│           │   ├── services/
-│           │   │   ├── __init__.py
-│           │   │   ├── keyword_service.py
-│           │   │   └── data_sources/
-│           │   │       ├── semrush.py
-│           │   │       ├── ahrefs.py
-│           │   │       └── dataforseo.py
-│           │   └── config.py
-│           ├── audience/       # Similar structure
-│           ├── competitor/     # Similar structure
-│           ├── trend/          # Similar structure
-│           └── aggregator/     # Similar structure
-├── tests/                      # Root level tests
-│   ├── __init__.py
-│   ├── conftest.py            # Pytest configuration
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
-├── ui/                        # Frontend (optional)
-│   └── nextjs/
-└── docs/                      # Documentation
-    ├── api.md
-    ├── deployment.md
-    └── development.md
+│       ├── agents/             # Specialized agent services
+│       │   ├── keyword/
+│       │   ├── audience/
+│       │   ├── competitor/
+│       │   ├── trend/
+│       │   └── aggregator/
+│       └── shared/             # Shared libraries and utilities
+└── ui/                         # Frontend application (Next.js)
 ```
 
----
+## 🗺️ Roadmap
 
-## Getting Started
+- [ ] Implement real-time progress updates on the frontend.
+- [ ] Add support for more data sources and APIs.
+- [ ] Enhance report generation with more customization options.
+- [ ] Develop a user authentication system.
+- [ ] Add comprehensive test coverage.
 
-1. Clone the repository:
-   ```bash
-   git clone <repo_url> AutoContentor
-   cd AutoContentor
-   ```
-2. Copy environment template:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
-   ```
-3. Build and run all services:
-   ```bash
-   docker-compose up --build
-   ```
-4. Check service health:
-   ```bash
-   docker-compose ps
-   ```
+## 📄 License
 
----
-
-## Architecture
-
-The system uses a stateless, file-based approach for data persistence. All agent results and reports are stored as JSON files in the local filesystem, making the system lightweight and easy to deploy without external database dependencies.
-
----
-
-## Front-End (React/Next.js)
-
-- Scaffold under `ui/nextjs` with TypeScript:
-  ```bash
-  npx create-next-app ui/nextjs --typescript
-  cd ui/nextjs
-  npm install axios swr tailwindcss
-  ```
-- Key pages:
-  - `/start-campaign`: Form to POST campaign data to `/api/orchestrator`.
-  - `/campaign/[id]`: Dashboard polling `/api/getReport?id=` to display report.
-- Components: `KeywordTable`, `PersonaCard`, `SWOTGrid`, `TrendList`, etc.
-- API routes proxy to FastAPI orchestrator endpoints.
-
----
-
-## Next Steps
-
-1. Implement core agent functionality.
-2. Develop ADK integration and workflow orchestration.
-3. Create file-based data persistence layer.
-4. Scaffold front-end and API routes.
-5. Integrate Dev-UI in orchestrator.
-6. Add CI/CD workflows and full test coverage.
-
----
-
-## License
-
-MIT
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
