@@ -1,6 +1,6 @@
 # AutoContentor
 
-AutoContentor is a multi-agent content research automation platform built on Google's Agent Development Kit (ADK). It orchestrates specialized agents to gather keyword data, audience personas, competitor SWOT analysis, and content trends, then aggregates results into structured reports stored in MongoDB and indexed in Elasticsearch.
+AutoContentor is a multi-agent content research automation platform built on Google's Agent Development Kit (ADK). It orchestrates specialized agents to gather keyword data, audience personas, competitor SWOT analysis, and content trends, then aggregates results into structured reports.
 
 ---
 
@@ -11,8 +11,8 @@ AutoContentor is a multi-agent content research automation platform built on Goo
 - **Audience Agent**: Builds customer personas (demographics, interests, pain points, sentiment) via Brandwatch, Twitter, Facebook.
 - **Competitor Agent (SWOT)**: Conducts SWOT analysis (strengths, weaknesses, opportunities, threats) using Ahrefs, BuzzSumo, SimilarWeb.
 - **Trend Agent**: Tracks content trends from Google Trends, Twitter, Reddit, Feedly.
-- **Aggregator Agent**: Waits for all agent results, combines data into a `ReportEntity`, stores in MongoDB, indexes in Elasticsearch, and notifies users.
-- **Shared Libraries**: Centralized clients (MongoDB, Redis, Elasticsearch), Pydantic models, and utility helpers.
+- **Aggregator Agent**: Waits for all agent results, combines data into a `ReportEntity`, and generates final reports.
+- **Shared Libraries**: Centralized API clients, Pydantic models, and utility helpers.
 - **Dev-UI**: FastAPI + ADK Web UI for real-time logs, events, and workflow visualization.
 - **Front-End**: React/Next.js interface for starting campaigns and viewing reports.
 - **Local Dev**: Docker Compose setup to run all services locally.
@@ -40,10 +40,8 @@ AutoContentor/
 │       │   │   ├── competitor.py
 │       │   │   ├── trend.py
 │       │   │   └── report.py
-│       │   ├── clients/        # Database & API clients
+│       │   ├── clients/        # API clients
 │       │   │   ├── __init__.py
-│       │   │   ├── mongo_client.py
-│       │   │   ├── redis_client.py
 │       │   │   └── api_clients.py
 │       │   ├── utils/          # Utilities
 │       │   │   ├── __init__.py
@@ -110,11 +108,10 @@ AutoContentor/
    git clone <repo_url> AutoContentor
    cd AutoContentor
    ```
-2. Copy environment templates:
+2. Copy environment template:
    ```bash
-   cp src/auto_contentor/orchestrator/.env.example .env
-   cp src/auto_contentor/agents/keyword_agent/.env.example .env.keyword
-   # Repeat for other agents
+   cp .env.example .env
+   # Edit .env with your API keys
    ```
 3. Build and run all services:
    ```bash
@@ -127,9 +124,9 @@ AutoContentor/
 
 ---
 
-## Domain Models Consolidation
+## Architecture
 
-Currently, entity schemas are duplicated in `shared/domain_models.py` and each agent's `entities.py`. To avoid drift and maintenance overhead, consolidate all schemas in `shared/domain_models.py` and update agents to import from it.
+The system uses a stateless, file-based approach for data persistence. All agent results and reports are stored as JSON files in the local filesystem, making the system lightweight and easy to deploy without external database dependencies.
 
 ---
 
@@ -151,11 +148,11 @@ Currently, entity schemas are duplicated in `shared/domain_models.py` and each a
 
 ## Next Steps
 
-1. Consolidate domain models and refactor agents.
-2. Create and configure `docker-compose.yaml`.
-3. Scaffold front-end and API routes.
-4. Integrate Dev-UI in orchestrator.
-5. Implement Aggregator Agent notifications.
+1. Implement core agent functionality.
+2. Develop ADK integration and workflow orchestration.
+3. Create file-based data persistence layer.
+4. Scaffold front-end and API routes.
+5. Integrate Dev-UI in orchestrator.
 6. Add CI/CD workflows and full test coverage.
 
 ---

@@ -12,8 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Includes all shared libraries for the Keyword Research Agent."""
+"""Base class for all agents."""
 
-from . import agent
+from google.adk import Agent
 
-__all__ = ["agent"]
+
+class BaseAgent(Agent):
+    """Base class for all agents."""
+
+    def __init__(self, model: str, instruction: str, name: str, tools: list):
+        super().__init__(
+            model=model, instruction=instruction, name=name, tools=tools
+        )
